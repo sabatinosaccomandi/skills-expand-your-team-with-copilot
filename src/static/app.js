@@ -568,6 +568,22 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `
         }
+        <div class="share-section">
+          <button class="share-button" data-activity="${name}" aria-label="Share this activity">
+            🔗 Share
+          </button>
+          <div class="share-dropdown hidden">
+            <a class="share-option share-twitter" href="#" target="_blank" rel="noopener noreferrer" aria-label="Share on Twitter">
+              <span class="share-icon">🐦</span> Twitter
+            </a>
+            <a class="share-option share-facebook" href="#" target="_blank" rel="noopener noreferrer" aria-label="Share on Facebook">
+              <span class="share-icon">📘</span> Facebook
+            </a>
+            <button class="share-option share-copy" aria-label="Copy link">
+              <span class="share-icon">📋</span> Copy Link
+            </button>
+          </div>
+        </div>
       </div>
     `;
 
@@ -586,6 +602,49 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       }
     }
+
+    // Add click handlers for share button
+    const shareButton = activityCard.querySelector(".share-button");
+    const shareDropdown = activityCard.querySelector(".share-dropdown");
+    const shareTwitter = activityCard.querySelector(".share-twitter");
+    const shareFacebook = activityCard.querySelector(".share-facebook");
+    const shareCopy = activityCard.querySelector(".share-copy");
+
+    const shareText = `Check out this activity at Mergington High School: ${name} - ${details.description}`;
+    const shareUrl = window.location.href;
+
+    shareButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (navigator.share) {
+        // Use native Web Share API if available
+        navigator.share({
+          title: `${name} - Mergington High School`,
+          text: shareText,
+          url: shareUrl,
+        }).catch(() => {}); // Ignore errors (e.g., user cancelled)
+      } else {
+        // Fallback: toggle dropdown
+        shareDropdown.classList.toggle("hidden");
+        // Update share URLs
+        shareTwitter.href = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+        shareFacebook.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`;
+      }
+    });
+
+    shareCopy.addEventListener("click", () => {
+      navigator.clipboard.writeText(`${shareText} ${shareUrl}`).then(() => {
+        shareCopy.innerHTML = '<span class="share-icon">✅</span> Copied!';
+        setTimeout(() => {
+          shareCopy.innerHTML = '<span class="share-icon">📋</span> Copy Link';
+        }, 2000);
+      }).catch(() => {
+        shareCopy.innerHTML = '<span class="share-icon">❌</span> Could not copy link';
+        setTimeout(() => {
+          shareCopy.innerHTML = '<span class="share-icon">📋</span> Copy Link';
+        }, 2000);
+      });
+      shareDropdown.classList.add("hidden");
+    });
 
     activitiesList.appendChild(activityCard);
   }
@@ -853,6 +912,13 @@ document.addEventListener("DOMContentLoaded", () => {
       showMessage("Failed to sign up. Please try again.", "error");
       console.error("Error signing up:", error);
     }
+  });
+
+  // Close any open share dropdowns when clicking outside
+  document.addEventListener("click", () => {
+    document.querySelectorAll(".share-dropdown").forEach((dropdown) => {
+      dropdown.classList.add("hidden");
+    });
   });
 
   // Expose filter functions to window for future UI control
